@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>وكيل ذكي للمنظومة الشمسية</title>
+  <style>
+    body { font-family: Tahoma, sans-serif; direction: rtl; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+    th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h2>وكيل ذكي + تطبيق حسابات هندسية حي</h2>
+
+  <label>الأحمال اليومية (kWh): <input type="number" id="E_total" value="435"></label>
+  <label>الأحمال الليلية (kWh): <input type="number" id="E_night" value="219"></label>
+  <label>PSH (ساعات شمس مكافئة): <input type="number" id="PSH" value="5.7" step="0.1"></label>
+  <label>كفاءة النظام: <input type="number" id="eta" value="0.75" step="0.01"></label>
+  <label>عدد أيام الاحتياط: 
+    <select id="days">
+      <option value="0.25">0.25 يوم (≈ 4 ساعات)</option>
+      <option value="1">1 يوم</option>
+      <option value="2">2 يوم</option>
+    </select>
+  </label>
+
+  <button onclick="calculate()">احسب</button>
+
+  <table id="results">
+    <tr>
+      <th>الخيار</th>
+      <th>الألواح المطلوبة (kWp)</th>
+      <th>سعة البطاريات (kWh)</th>
+      <th>عدد البنوك HV</th>
+      <th>توصية الوكيل الذكي</th>
+    </tr>
+  </table>
+
+<script>
+function calculate() {
+  const E_total = parseFloat(document.getElementById('E_total').value);
+  const E_night = parseFloat(document.getElementById('E_night').value);
+  const PSH = parseFloat(document.getElementById('PSH').value);
+  const eta = parseFloat(document.getElementById('eta').value);
+  const days = parseFloat(document.getElementById('days').value);
+
+  // حساب الألواح
+  const Wp = (E_total / (PSH * eta)).toFixed(0);
+
+  // حساب البطاريات
+  const V = 400, DOD = 0.9, eta_inv = 0.92, eta_batt = 0.85;
+  const Ah = E_night * days / (V * DOD * eta_inv * eta_batt);
+  const kWh = (Ah * V / 1000).toFixed(0);
+  const banks = Math.ceil(kWh / 80); // كل بنك ≈ 80kWh
+
+  // توصية الوكيل الذكي
+  let advice = "الألواح كافية لتغطية الحمل اليومي.";
+  if (days >= 1) advice += " البطاريات تغطي يوم غائم كامل.";
+  if (days >= 2) advice += " البطاريات تغطي يومين غيوم متتاليين.";
+  if (Wp < 150) advice += " يفضل زيادة الألواح بنسبة 20–30% لمواجهة الغيوم.";
+
+  const table = document.getElementById('results');
+  table.innerHTML = `
+    <tr><th>الخيار</th><th>الألواح المطلوبة (kWp)</th><th>سعة البطاريات (kWh)</th><th>عدد البنوك HV</th><th>توصية الوكيل الذكي</th></tr>
+    <tr><td>${days} يوم احتياط</td><td>${Wp}</td><td>${kWh}</td><td>${banks}</td><td>${advice}</td></tr>
+  `;
+}
+</script>
+</body>
+</html>
